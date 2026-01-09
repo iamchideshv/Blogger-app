@@ -1,124 +1,272 @@
-/* From Uiverse.io by Yaya12085 */
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background-size: 200% 200%;
+    animation: gradientBG 15s ease infinite;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Floating particles/orbs in background */
+.container::before,
+.container::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: floatBackground 20s infinite ease-in-out;
+    pointer-events: none;
+}
+
+.container::before {
+    top: -100px;
+    left: -100px;
+}
+
+.container::after {
+    bottom: -100px;
+    right: -100px;
+    animation-delay: -10s;
+}
+
 .form-container {
-    width: 320px;
-    border-radius: 0.75rem;
-    background-color: rgba(17, 24, 39, 1);
-    padding: 2rem;
-    color: rgba(243, 244, 246, 1);
+    width: 350px;
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    color: #f3f4f6;
+    animation: floatCard 6s ease-in-out infinite;
+    position: relative;
+    z-index: 10;
 }
 
 .title {
     text-align: center;
-    font-size: 1.5rem;
-    line-height: 2rem;
-    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+    letter-spacing: 0.05em;
 }
 
 .form {
-    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
 .input-group {
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    position: relative;
 }
 
 .input-group label {
     display: block;
-    color: rgba(156, 163, 175, 1);
-    margin-bottom: 4px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .input-group input {
     width: 100%;
-    border-radius: 0.375rem;
-    border: 1px solid rgba(55, 65, 81, 1);
-    outline: 0;
-    background-color: rgba(17, 24, 39, 1);
-    padding: 0.75rem 1rem;
-    color: rgba(243, 244, 246, 1);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input-group input:focus {
-    border-color: rgba(167, 139, 250);
+    outline: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(167, 139, 250, 0.6);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.2);
+    transform: translateY(-2px);
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .forgot {
-    display: flex;
-    justify-content: flex-end;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    color: rgba(156, 163, 175, 1);
-    margin: 8px 0 14px 0;
+    text-align: right;
+    margin-top: 0.5rem;
 }
 
-.forgot a,
-.signup a {
-    color: rgba(243, 244, 246, 1);
+.forgot a {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
     text-decoration: none;
-    font-size: 14px;
+    transition: color 0.3s ease;
 }
 
-.forgot a:hover,
-.signup a:hover {
-    text-decoration: underline rgba(167, 139, 250, 1);
+.forgot a:hover {
+    color: #a78bfa;
+    text-shadow: 0 0 8px rgba(167, 139, 250, 0.4);
 }
 
 .sign {
-    display: block;
     width: 100%;
-    background-color: rgba(167, 139, 250, 1);
-    padding: 0.75rem;
-    text-align: center;
-    color: rgba(17, 24, 39, 1);
+    padding: 0.875rem;
+    border-radius: 0.75rem;
     border: none;
-    border-radius: 0.375rem;
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    color: #fff;
     font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.sign:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5);
+    background: linear-gradient(135deg, #b794f4 0%, #9f7aea 100%);
+}
+
+.sign:active {
+    transform: translateY(1px);
 }
 
 .social-message {
     display: flex;
     align-items: center;
-    padding-top: 1rem;
+    margin: 1.5rem 0;
+    gap: 1rem;
 }
 
 .line {
+    flex: 1;
     height: 1px;
-    flex: 1 1 0%;
-    background-color: rgba(55, 65, 81, 1);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
-.social-message .message {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: rgba(156, 163, 175, 1);
+.message {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
 }
 
 .social-icons {
     display: flex;
     justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
-.social-icons .icon {
-    border-radius: 0.125rem;
-    padding: 0.75rem;
-    border: none;
-    background-color: transparent;
-    margin-left: 8px;
+.icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
 }
 
-.social-icons .icon svg {
-    height: 1.25rem;
-    width: 1.25rem;
-    fill: #fff;
+.icon:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(167, 139, 250, 0.4);
+    transform: translateY(-3px) rotate(5deg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
 }
 
 .signup {
     text-align: center;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    color: rgba(156, 163, 175, 1);
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.signup a {
+    color: #a78bfa;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.signup a:hover {
+    text-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
+    color: #fff;
+}
+
+/* Animations */
+@keyframes floatCard {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes floatBackground {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(50px, 50px) rotate(180deg);
+    }
+
+    100% {
+        transform: translate(0, 0) rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    .form-container {
+        width: 90%;
+        padding: 1.5rem;
+    }
 }

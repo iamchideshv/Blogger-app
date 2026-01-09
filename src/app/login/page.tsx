@@ -64,7 +64,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className={styles.container}>
             <div className={styles['form-container']}>
                 <p className={styles.title}>Login</p>
                 {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
