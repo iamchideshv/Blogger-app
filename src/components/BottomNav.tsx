@@ -22,7 +22,7 @@ export default function BottomNav() {
                 </Link>
 
                 {/* Post Tab (Center) */}
-                <button className="flex flex-col items-center absolute left-1/2 -translate-x-1/2 -top-6 group">
+                <Link href="/create" className="flex flex-col items-center absolute left-1/2 -translate-x-1/2 -top-6 group">
                     {/* "POST" Label Container */}
                     <div className="bg-white border-2 border-black px-1.5 py-0.5 mb-[-2px] z-10 transition-transform group-active:scale-95">
                         <span className="font-bold text-xs tracking-wider font-sans text-black">POST</span>
@@ -37,7 +37,7 @@ export default function BottomNav() {
                             className="w-10 h-10 object-contain"
                         />
                     </div>
-                </button>
+                </Link>
 
                 {/* User Profile Tab */}
                 <Link href="/profile" className="flex flex-col items-center justify-center w-12 h-12">
