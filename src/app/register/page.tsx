@@ -1,40 +1,85 @@
 "use client";
 
-import styles from './login.module.css';
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import styles from './register.module.css';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from "firebase/auth";
+import { auth, db, googleProvider } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
     const router = useRouter();
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [formData, setFormData] = useState({
+        name: "",
+        username: "",
+        email: "",
+        password: "",
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleGoogleLogin = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
             router.push("/");
         } catch (err: any) {
-            console.error("Login failed:", err);
-            setError("Failed to log in. Please try again.");
+            console.error("Google Login failed:", err);
+            setError("Failed to register with Google. Please try again.");
         }
     };
 
-    const handleEmailLogin = async (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
+        if (!formData.email || !formData.password || !formData.name || !formData.username) {
+            setError("All fields are required.");
+            return;
+        }
+
+        setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            // Create Auth User
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const user = userCredential.user;
+
+            // Update Auth Profile
+            await updateProfile(user, {
+                displayName: formData.name,
+                photoURL: "/user.png" // Default image
+            });
+
+            // Save to Firestore
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                name: formData.name,
+                username: formData.username,
+                email: formData.email,
+                profileImage: "/user.png",
+                createdAt: new Date().toISOString(),
+                stats: {
+                    posts: 0,
+                    followers: 0,
+                    following: 0
+                }
+            });
+
             router.push("/");
         } catch (err: any) {
-            console.error("Login failed:", err);
-            setError("Invalid email or password.");
+            console.error("Registration failed:", err);
+            // Improve error messages
+            if (err.code === "auth/email-already-in-use") {
+                setError("Email is already in use.");
+            } else if (err.code === "auth/weak-password") {
+                setError("Password should be at least 6 characters.");
+            } else {
+                setError("Failed to create account. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -43,48 +88,72 @@ export default function LoginPage() {
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className={styles['form-container']}>
-                <p className={styles.title}>Login</p>
+                <p className={styles.title}>Register</p>
                 {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
 
-                <form className={styles.form} onSubmit={handleEmailLogin}>
+                <form className={styles.form} onSubmit={handleRegister}>
+                    <div className={styles['input-group']}>
+                        <label htmlFor="name">Full Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            id="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            placeholder="John Doe"
+                        />
+                    </div>
+
+                    <div className={styles['input-group']}>
+                        <label htmlFor="username">Username</label>
+                        <input
+                            type="text"
+                            name="username"
+                            id="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            placeholder="johndoe123"
+                        />
+                    </div>
+
                     <div className={styles['input-group']}>
                         <label htmlFor="email">Email</label>
                         <input
                             type="email"
                             name="email"
                             id="email"
+                            value={formData.email}
+                            onChange={handleChange}
                             placeholder="john@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
+
                     <div className={styles['input-group']}>
                         <label htmlFor="password">Password</label>
                         <input
                             type="password"
                             name="password"
                             id="password"
+                            value={formData.password}
+                            onChange={handleChange}
                             placeholder="******"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
                         />
-                        <div className={styles.forgot}>
-                            <a rel="noopener noreferrer" href="#">Forgot Password ?</a>
-                        </div>
                     </div>
+
                     <button className={styles.sign} disabled={loading}>
-                        {loading ? "Signing in..." : "Sign in"}
+                        {loading ? "Creating Account..." : "Sign up"}
                     </button>
                 </form>
 
                 <div className={styles['social-message']}>
                     <div className={styles.line}></div>
-                    <p className={styles.message}>Login with social accounts</p>
+                    <p className={styles.message}>Or register with social accounts</p>
                     <div className={styles.line}></div>
                 </div>
+
                 <div className={styles['social-icons']}>
                     <button
-                        aria-label="Log in with Google"
+                        aria-label="Register with Google"
                         className={styles.icon}
                         onClick={handleGoogleLogin}
                         type="button"
@@ -104,8 +173,9 @@ export default function LoginPage() {
                         </svg>
                     </button>
                 </div>
-                <p className={styles.signup}>Don't have an account?
-                    <Link href="/register" className="ml-1">Sign up</Link>
+
+                <p className={styles.signup}>Already have an account?
+                    <Link href="/login" className="ml-1">Sign in</Link>
                 </p>
             </div>
         </div>

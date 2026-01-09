@@ -10,6 +10,10 @@ export default function BottomNav() {
     const pathname = usePathname();
     const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
+    if (pathname === '/login' || pathname === '/register') {
+        return null;
+    }
+
     return (
         <>
             <div className="fixed bottom-6 left-0 right-0 z-50 px-6 flex justify-center pointer-events-none">
