@@ -3,10 +3,11 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore"; // Added doc, getDoc
 import { useAuth } from "@/context/AuthContext";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import EditProfileModal from "@/components/EditProfileModal"; // Import Modal
 
 interface Post {
     id: string;
@@ -20,11 +21,28 @@ export default function ProfilePage() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false); // Modal state
+    const [userBio, setUserBio] = useState(""); // Bio state
 
     const derivedUsername = user?.email?.split('@')[0] || "user";
 
+    // Fetch latest user data (including bio) from Firestore
+    useEffect(() => {
+        if (user) {
+            const fetchUserData = async () => {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setUserBio(data.bio || "");
+                }
+            };
+            fetchUserData();
+        }
+    }, [user]);
+
     const userData = {
-        username: derivedUsername,
+        username: derivedUsername, // This might be stale if updated, ideally fetch from Firestore too, but for now derived is fallback
         name: user?.displayName || "Anonymous",
         profileImage: user?.photoURL || "/user.png",
         stats: {
@@ -32,7 +50,8 @@ export default function ProfilePage() {
             followers: 0,
             following: 0,
         },
-        bio: "",
+        bio: userBio,
+        uid: user?.uid || "",
     };
 
     const handleLogout = async () => {
@@ -78,16 +97,36 @@ export default function ProfilePage() {
 
     return (
         <div className="flex flex-col min-h-screen text-black pb-24">
+            {/* Modal */}
+            <EditProfileModal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                initialData={userData}
+            />
+
             {/* Header */}
             <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white z-10 relative">
                 <div className="flex items-center gap-1">
                     <h1 className="text-xl font-bold">{userData.username}</h1>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button className="active:opacity-70">
+                    <button
+                        className="active:opacity-70"
+                        onClick={() => setIsEditOpen(true)} // Open Modal
+                    >
                         <Image
-                            src="/post-office.png"
-                            alt="Create"
+                            src="/post-office.png" // User mentioned "near edit or change"... assuming this is the edit button or I should make it more explicit?
+                            // Re-reading user request: "click edit profile it show option... and near edit or change"
+                            // The user previously had a "Settings" icon. 
+                            // Current code has "/post-office.png" (Create Post?) and Settings (hamburger).
+                            // Wait, previously the user asked for "Edit Profile" button.
+                            // Let's assume the pencil/edit icon is what is desired or I should swap the post-office icon if it was misplaced.
+                            // Actually, let's look at the previous structure. 
+                            // The user's request implies *an* edit profile button. 
+                            // In standard IG UI, there is usually an "Edit Profile" button *in the body*, not just the header.
+                            // But for now, I will wire the 'create' looking button in the header if that's what was intended, OR specifically add a big "Edit Profile" button in the body like Instagram.
+                            // Let's look at the body rendering in next steps. For now, let's keep the header clean but maybe ensure the 'Edit Profile' button exists in the profile info section.
+                            alt="Edit Profile"
                             width={24}
                             height={24}
                             className="w-6 h-6 object-contain"
@@ -163,7 +202,10 @@ export default function ProfilePage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-8">
-                    <button className="flex-1 bg-gray-100 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-200 active:scale-95 transition-all">
+                    <button
+                        onClick={() => setIsEditOpen(true)}
+                        className="flex-1 bg-gray-100 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-200 active:scale-95 transition-all"
+                    >
                         Edit profile
                     </button>
                     <button className="flex-1 bg-gray-100 py-1.5 rounded-lg text-sm font-semibold hover:bg-gray-200 active:scale-95 transition-all">
