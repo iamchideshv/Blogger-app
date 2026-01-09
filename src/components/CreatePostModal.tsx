@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface CreatePostModalProps {
     isOpen: boolean;
@@ -9,6 +11,31 @@ interface CreatePostModalProps {
 
 export default function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     const [text, setText] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePost = async () => {
+        if (!text.trim()) return;
+
+        setIsLoading(true);
+        try {
+            await addDoc(collection(db, "posts"), {
+                text: text,
+                username: "iamchidesh", // Hardcoded for now as per profile page
+                name: "CHIDESH 🦅",
+                profileImage: "/user.png",
+                timestamp: serverTimestamp(),
+                likes: 0,
+                comments: 0,
+            });
+            setText("");
+            onClose();
+        } catch (error) {
+            console.error("Error adding post: ", error);
+            alert("Failed to post. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -24,10 +51,11 @@ export default function CreatePostModal({ isOpen, onClose }: CreatePostModalProp
                         </svg>
                     </button>
                     <button
-                        className="px-4 py-1.5 bg-black text-white rounded-full font-bold text-sm disabled:opacity-50"
-                        disabled={!text.trim()}
+                        onClick={handlePost}
+                        className="px-4 py-1.5 bg-black text-white rounded-full font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!text.trim() || isLoading}
                     >
-                        Post
+                        {isLoading ? "Posting..." : "Post"}
                     </button>
                 </div>
 

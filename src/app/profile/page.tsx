@@ -1,19 +1,52 @@
+"use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+
+interface Post {
+    id: string;
+    text: string;
+    timestamp: any;
+}
 
 export default function ProfilePage() {
-    // Placeholder data - cleared as requested
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Hardcoded user info for now, as we don't have auth yet
     const user = {
-        username: "Username",
-        name: "Name",
+        username: "iamchidesh",
+        name: "CHIDESH 🦅",
         profileImage: "/user.png",
         stats: {
-            posts: 0,
-            followers: 0,
-            following: 0,
+            posts: posts.length, // Dynamic post count
+            followers: 283,
+            following: 282,
         },
         bio: "",
     };
+
+    useEffect(() => {
+        // Query posts where username matches "iamchidesh"
+        const q = query(
+            collection(db, "posts"),
+            where("username", "==", user.username),
+            orderBy("timestamp", "desc")
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const postsData = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as Post[];
+            setPosts(postsData);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user.username]);
 
     return (
         <div className="flex flex-col min-h-screen text-black pb-24">
@@ -33,7 +66,6 @@ export default function ProfilePage() {
                         />
                     </button>
                     <button className="active:opacity-70">
-                        {/* Settings/Hamburger Menu Icon */}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
@@ -106,18 +138,34 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-24 h-24 rounded-full border-2 border-black flex items-center justify-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                        </svg>
-                    </div>
-                    <h3 className="font-bold text-xl mb-1">Not yet posted</h3>
-                    <p className="text-gray-500 text-sm">Start capturing your moments to share with everyone.</p>
+                <div className="flex flex-col py-1">
+                    {loading ? (
+                        <div className="flex justify-center py-10">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+                        </div>
+                    ) : posts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <div className="w-24 h-24 rounded-full border-2 border-black flex items-center justify-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                                </svg>
+                            </div>
+                            <h3 className="font-bold text-xl mb-1">Not yet posted</h3>
+                            <p className="text-gray-500 text-sm">Start capturing your moments to share with everyone.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-0.5">
+                            {posts.map((post) => (
+                                <div key={post.id} className="aspect-square bg-white border border-gray-100 relative p-2 flex items-center justify-center text-center">
+                                    {/* In a real app with images, this would be an image. For now, text. */}
+                                    <span className="text-[10px] text-gray-500 line-clamp-3 overflow-hidden">{post.text}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
     );
 }
-

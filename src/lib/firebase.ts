@@ -2,6 +2,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
+import { getFirestore } from "firebase/firestore";
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyC2jBLeTgNI7wIwtWzHbnRv15GewwHyj98",
@@ -16,6 +18,7 @@ const firebaseConfig = {
 // Initialize Firebase
 // Use getApps() to prevent re-initialization errors during hot-reload in Next.js
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let analytics;
 
@@ -28,4 +31,4 @@ if (typeof window !== "undefined") {
     });
 }
 
-export { app, analytics };
+export { app, db, analytics };
