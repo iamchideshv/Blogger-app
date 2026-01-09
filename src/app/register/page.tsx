@@ -3,7 +3,7 @@
 import styles from './register.module.css';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from "firebase/auth";
 import { auth, db, googleProvider } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -25,11 +25,33 @@ export default function RegisterPage() {
 
     const handleGoogleLogin = async () => {
         try {
-            await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // Check & Create Firestore Doc (Same logic as Login)
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (!userDoc.exists()) {
+                await setDoc(userDocRef, {
+                    uid: user.uid,
+                    name: user.displayName || "Anonymous",
+                    username: user.email?.split('@')[0] || "user" + Math.floor(Math.random() * 1000),
+                    email: user.email,
+                    profileImage: user.photoURL || "/user.png",
+                    createdAt: new Date().toISOString(),
+                    stats: {
+                        posts: 0,
+                        followers: 0,
+                        following: 0
+                    }
+                });
+            }
+
             router.push("/");
         } catch (err: any) {
-            console.error("Google Login failed:", err);
-            setError("Failed to register with Google. Please try again.");
+            console.error("Google Register failed:", err);
+            setError("Failed to register with Google.");
         }
     };
 
@@ -44,6 +66,13 @@ export default function RegisterPage() {
 
         setLoading(true);
         try {
+            // Check username uniqueness
+            const q = query(collection(db, "users"), where("username", "==", formData.username));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                throw new Error("Username is already taken.");
+            }
+
             // Create Auth User
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
             const user = userCredential.user;
@@ -51,7 +80,7 @@ export default function RegisterPage() {
             // Update Auth Profile
             await updateProfile(user, {
                 displayName: formData.name,
-                photoURL: "/user.png" // Default image
+                photoURL: "/user.png"
             });
 
             // Save to Firestore
@@ -72,9 +101,10 @@ export default function RegisterPage() {
             router.push("/");
         } catch (err: any) {
             console.error("Registration failed:", err);
-            // Improve error messages
-            if (err.code === "auth/email-already-in-use") {
-                setError("Email is already in use.");
+            if (err.message === "Username is already taken.") {
+                setError(err.message);
+            } else if (err.code === "auth/email-already-in-use") {
+                setError("Email already in use. Try logging in with Google?");
             } else if (err.code === "auth/weak-password") {
                 setError("Password should be at least 6 characters.");
             } else {
