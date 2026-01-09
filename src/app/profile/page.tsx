@@ -54,14 +54,20 @@ export default function ProfilePage() {
             orderBy("timestamp", "desc")
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const postsData = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            })) as Post[];
-            setPosts(postsData);
-            setLoading(false);
-        });
+        const unsubscribe = onSnapshot(q,
+            (snapshot) => {
+                const postsData = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                })) as Post[];
+                setPosts(postsData);
+                setLoading(false);
+            },
+            (error) => {
+                console.error("Error fetching user posts:", error);
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, [user, derivedUsername, authLoading]);

@@ -31,37 +31,29 @@ export default function Home() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user) return; // Don't fetch if no user (will redirect)
+    if (!user) return;
 
     const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Post[];
-      setPosts(postsData);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(q,
+      (snapshot) => {
+        const postsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Post[];
+        setPosts(postsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching posts:", error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [user]);
 
   if (authLoading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div></div>;
   if (!user) return null;
-
-  useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Post[];
-      setPosts(postsData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   return (
     <div className="flex flex-col min-h-screen relative">
@@ -95,8 +87,8 @@ export default function Home() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
                   <Image
-                    src={post.profileImage}
-                    alt={post.username}
+                    src={post.profileImage || "/user.png"}
+                    alt={post.username || "User"}
                     fill
                     className="object-cover"
                   />
