@@ -2,22 +2,45 @@
 
 import styles from './login.module.css';
 import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, googleProvider, db } from "@/lib/firebase"; // Added db
+import { auth, googleProvider, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { collection, query, where, getDocs, limit } from "firebase/firestore"; // Added firestore imports
+import { collection, query, where, getDocs, limit, doc, getDoc, setDoc } from "firebase/firestore";
 
 export default function LoginPage() {
     const router = useRouter();
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [identifier, setIdentifier] = useState(""); // Changed email to identifier
+    const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
 
     const handleGoogleLogin = async () => {
         try {
-            await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // Check if user exists in Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (!userDoc.exists()) {
+                // Create new user doc if it doesn't exist
+                await setDoc(userDocRef, {
+                    uid: user.uid,
+                    name: user.displayName || "Anonymous",
+                    username: user.email?.split('@')[0] || "user" + Math.floor(Math.random() * 1000),
+                    email: user.email,
+                    profileImage: user.photoURL || "/user.png",
+                    createdAt: new Date().toISOString(),
+                    stats: {
+                        posts: 0,
+                        followers: 0,
+                        following: 0
+                    }
+                });
+            }
+
             router.push("/");
         } catch (err: any) {
             console.error("Login failed:", err);
