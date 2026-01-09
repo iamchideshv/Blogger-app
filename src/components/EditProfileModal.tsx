@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db, storage, auth } from "@/lib/firebase";
-import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore"; // Changed to setDoc
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import Image from "next/image";
@@ -56,6 +56,7 @@ export default function EditProfileModal({ isOpen, onClose, initialData }: EditP
 
         setLoading(true);
         setError("");
+        console.log("Starting profile update...");
 
         try {
             const user = auth.currentUser;
@@ -63,6 +64,7 @@ export default function EditProfileModal({ isOpen, onClose, initialData }: EditP
 
             // 1. Check Username Uniqueness (if changed)
             if (username !== initialData.username) {
+                console.log("Checking username uniqueness...");
                 const q = query(collection(db, "users"), where("username", "==", username));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
@@ -74,30 +76,41 @@ export default function EditProfileModal({ isOpen, onClose, initialData }: EditP
 
             // 2. Upload Image (if changed)
             if (imageFile) {
-                const storageRef = ref(storage, `profile_images/${user.uid}`);
-                await uploadBytes(storageRef, imageFile);
-                profileImageUrl = await getDownloadURL(storageRef);
+                console.log("Uploading profile image...");
+                try {
+                    const storageRef = ref(storage, `profile_images/${user.uid}`);
+                    await uploadBytes(storageRef, imageFile);
+                    profileImageUrl = await getDownloadURL(storageRef);
+                    console.log("Image uploaded successfully:", profileImageUrl);
+                } catch (storageErr) {
+                    console.error("Storage error:", storageErr);
+                    throw new Error("Failed to upload image. Please check your Firebase Storage settings.");
+                }
             }
 
-            // 3. Update Firestore
+            // 3. Update Firestore (Use setDoc with merge for robustness)
+            console.log("Updating Firestore document...");
             const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
+            await setDoc(userDocRef, {
                 name,
                 username,
                 bio,
                 profileImage: profileImageUrl,
-            });
+                updatedAt: new Date().toISOString(),
+            }, { merge: true });
 
             // 4. Update Auth Profile
+            console.log("Updating Auth profile...");
             await updateProfile(user, {
                 displayName: name,
                 photoURL: profileImageUrl,
             });
 
+            console.log("Profile updated successfully!");
             onClose();
         } catch (err: any) {
             console.error("Error updating profile:", err);
-            setError(err.message || "Failed to update profile.");
+            setError(err.message || "Failed to update profile. Please try again.");
         } finally {
             setLoading(false);
         }
