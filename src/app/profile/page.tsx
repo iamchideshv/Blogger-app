@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 interface Post {
     id: string;
@@ -14,8 +16,10 @@ interface Post {
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const derivedUsername = user?.email?.split('@')[0] || "user";
 
@@ -31,9 +35,18 @@ export default function ProfilePage() {
         bio: "",
     };
 
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            router.push("/login");
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    };
+
     useEffect(() => {
         if (authLoading) return;
-        if (!user) return; // Should potentially redirect or show empty
+        if (!user) return;
 
         const q = query(
             collection(db, "posts"),
@@ -55,12 +68,12 @@ export default function ProfilePage() {
 
     if (authLoading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div></div>;
 
-    if (!user) return null; // Or some other empty state
+    if (!user) return null;
 
     return (
         <div className="flex flex-col min-h-screen text-black pb-24">
             {/* Header */}
-            <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white z-10">
+            <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white z-10 relative">
                 <div className="flex items-center gap-1">
                     <h1 className="text-xl font-bold">{userData.username}</h1>
                 </div>
@@ -74,11 +87,31 @@ export default function ProfilePage() {
                             className="w-6 h-6 object-contain"
                         />
                     </button>
-                    <button className="active:opacity-70">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                    </button>
+                    <div className="relative">
+                        <button
+                            className="active:opacity-70"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {isMenuOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-50 text-sm font-semibold transition-colors flex items-center gap-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                                    </svg>
+                                    Log out
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -175,6 +208,6 @@ export default function ProfilePage() {
                     )}
                 </div>
             </main>
-        </div>
+        </div >
     );
 }
