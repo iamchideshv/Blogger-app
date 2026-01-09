@@ -2,16 +2,17 @@
 
 import styles from './login.module.css';
 import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth, googleProvider, db } from "@/lib/firebase"; // Added db
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { collection, query, where, getDocs, limit } from "firebase/firestore"; // Added firestore imports
 
 export default function LoginPage() {
     const router = useRouter();
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState("");
+    const [identifier, setIdentifier] = useState(""); // Changed email to identifier
     const [password, setPassword] = useState("");
 
     const handleGoogleLogin = async () => {
@@ -30,11 +31,33 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            let emailToUse = identifier;
+
+            // If it doesn't look like an email, assume it's a username and look it up
+            if (!identifier.includes('@')) {
+                const q = query(
+                    collection(db, "users"),
+                    where("username", "==", identifier),
+                    limit(1)
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    throw new Error("Username not found");
+                }
+
+                emailToUse = querySnapshot.docs[0].data().email;
+            }
+
+            await signInWithEmailAndPassword(auth, emailToUse, password);
             router.push("/");
         } catch (err: any) {
             console.error("Login failed:", err);
-            setError("Invalid email or password.");
+            if (err.message === "Username not found") {
+                setError("Username not found.");
+            } else {
+                setError("Invalid email/username or password.");
+            }
         } finally {
             setLoading(false);
         }
@@ -48,14 +71,14 @@ export default function LoginPage() {
 
                 <form className={styles.form} onSubmit={handleEmailLogin}>
                     <div className={styles['input-group']}>
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="identifier">Email or Username</label>
                         <input
-                            type="email"
-                            name="email"
-                            id="email"
-                            placeholder="john@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            type="text"
+                            name="identifier"
+                            id="identifier"
+                            placeholder="john@example.com or johndoe"
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
                         />
                     </div>
                     <div className={styles['input-group']}>
