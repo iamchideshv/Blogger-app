@@ -22,35 +22,32 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false); // Modal state
-    const [userBio, setUserBio] = useState(""); // Bio state
+    const [userProfile, setUserProfile] = useState<any>(null); // Full profile data
 
-    const derivedUsername = user?.email?.split('@')[0] || "user";
-
-    // Fetch latest user data (including bio) from Firestore
+    // Real-time listener for user profile data (Name, Username, Bio, Image)
     useEffect(() => {
-        if (user) {
-            const fetchUserData = async () => {
-                const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setUserBio(data.bio || "");
-                }
-            };
-            fetchUserData();
-        }
+        if (!user) return;
+
+        const docRef = doc(db, "users", user.uid);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setUserProfile(docSnap.data());
+            }
+        });
+
+        return () => unsubscribe();
     }, [user]);
 
     const userData = {
-        username: derivedUsername, // This might be stale if updated, ideally fetch from Firestore too, but for now derived is fallback
-        name: user?.displayName || "Anonymous",
-        profileImage: user?.photoURL || "/user.png",
+        username: userProfile?.username || user?.email?.split('@')[0] || "user",
+        name: userProfile?.name || user?.displayName || "Anonymous",
+        profileImage: userProfile?.profileImage || user?.photoURL || "/user.png",
         stats: {
             posts: posts.length,
-            followers: 0,
-            following: 0,
+            followers: userProfile?.stats?.followers || 0,
+            following: userProfile?.stats?.following || 0,
         },
-        bio: userBio,
+        bio: userProfile?.bio || "",
         uid: user?.uid || "",
     };
 
@@ -69,7 +66,7 @@ export default function ProfilePage() {
 
         const q = query(
             collection(db, "posts"),
-            where("username", "==", derivedUsername),
+            where("username", "==", userData.username),
             orderBy("timestamp", "desc")
         );
 
@@ -89,7 +86,7 @@ export default function ProfilePage() {
         );
 
         return () => unsubscribe();
-    }, [user, derivedUsername, authLoading]);
+    }, [user, userData.username, authLoading]);
 
     if (authLoading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div></div>;
 
