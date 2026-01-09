@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
 
 interface Post {
     id: string;
@@ -12,27 +13,31 @@ interface Post {
 }
 
 export default function ProfilePage() {
+    const { user, loading: authLoading } = useAuth();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Hardcoded user info for now, as we don't have auth yet
-    const user = {
-        username: "iamchidesh",
-        name: "CHIDESH 🦅",
-        profileImage: "/user.png",
+    const derivedUsername = user?.email?.split('@')[0] || "user";
+
+    const userData = {
+        username: derivedUsername,
+        name: user?.displayName || "Anonymous",
+        profileImage: user?.photoURL || "/user.png",
         stats: {
-            posts: posts.length, // Dynamic post count
-            followers: 283,
-            following: 282,
+            posts: posts.length,
+            followers: 0,
+            following: 0,
         },
         bio: "",
     };
 
     useEffect(() => {
-        // Query posts where username matches "iamchidesh"
+        if (authLoading) return;
+        if (!user) return; // Should potentially redirect or show empty
+
         const q = query(
             collection(db, "posts"),
-            where("username", "==", user.username),
+            where("username", "==", derivedUsername),
             orderBy("timestamp", "desc")
         );
 
@@ -46,14 +51,18 @@ export default function ProfilePage() {
         });
 
         return () => unsubscribe();
-    }, [user.username]);
+    }, [user, derivedUsername, authLoading]);
+
+    if (authLoading) return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div></div>;
+
+    if (!user) return null; // Or some other empty state
 
     return (
         <div className="flex flex-col min-h-screen text-black pb-24">
             {/* Header */}
             <header className="flex items-center justify-between px-4 py-4 sticky top-0 bg-white z-10">
                 <div className="flex items-center gap-1">
-                    <h1 className="text-xl font-bold">{user.username}</h1>
+                    <h1 className="text-xl font-bold">{userData.username}</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <button className="active:opacity-70">
@@ -81,8 +90,8 @@ export default function ProfilePage() {
                         <div className="w-20 h-20 rounded-full border border-gray-200 p-0.5">
                             <div className="w-full h-full rounded-full bg-gray-100 overflow-hidden relative">
                                 <Image
-                                    src={user.profileImage}
-                                    alt={user.username}
+                                    src={userData.profileImage}
+                                    alt={userData.username}
                                     fill
                                     className="object-cover"
                                 />
@@ -93,15 +102,15 @@ export default function ProfilePage() {
                     {/* Stats */}
                     <div className="flex-1 flex justify-around items-center ml-4 mt-2">
                         <div className="flex flex-col items-center">
-                            <span className="font-bold text-lg">{user.stats.posts}</span>
+                            <span className="font-bold text-lg">{userData.stats.posts}</span>
                             <span className="text-sm">posts</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="font-bold text-lg">{user.stats.followers}</span>
+                            <span className="font-bold text-lg">{userData.stats.followers}</span>
                             <span className="text-sm">followers</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="font-bold text-lg">{user.stats.following}</span>
+                            <span className="font-bold text-lg">{userData.stats.following}</span>
                             <span className="text-sm">following</span>
                         </div>
                     </div>
@@ -109,8 +118,8 @@ export default function ProfilePage() {
 
                 {/* Bio Section */}
                 <div className="mb-4 text-sm">
-                    <h2 className="font-bold mb-1">{user.name}</h2>
-                    <p className="text-gray-600 whitespace-pre-wrap">{user.bio || "No bio yet."}</p>
+                    <h2 className="font-bold mb-1">{userData.name}</h2>
+                    <p className="text-gray-600 whitespace-pre-wrap">{userData.bio || "No bio yet."}</p>
                 </div>
 
                 {/* Action Buttons */}

@@ -3,6 +3,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,6 +20,8 @@ const firebaseConfig = {
 // Use getApps() to prevent re-initialization errors during hot-reload in Next.js
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 let analytics;
 
@@ -31,4 +34,4 @@ if (typeof window !== "undefined") {
     });
 }
 
-export { app, db, analytics };
+export { app, db, auth, googleProvider, analytics };

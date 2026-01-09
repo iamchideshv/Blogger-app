@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Lobster } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +36,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${lobster.variable} antialiased bg-white`}
         suppressHydrationWarning
       >
-        <div className="min-h-screen relative pb-24">
-          {children}
-          <BottomNav />
-        </div>
+        <AuthProvider>
+          <div className="min-h-screen relative pb-24">
+            {children}
+            <BottomNav />
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

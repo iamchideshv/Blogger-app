@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
 
 interface CreatePostModalProps {
     isOpen: boolean;
@@ -12,17 +13,18 @@ interface CreatePostModalProps {
 export default function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     const [text, setText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const { user } = useAuth();
 
     const handlePost = async () => {
-        if (!text.trim()) return;
+        if (!text.trim() || !user) return;
 
         setIsLoading(true);
         try {
             await addDoc(collection(db, "posts"), {
                 text: text,
-                username: "iamchidesh", // Hardcoded for now as per profile page
-                name: "CHIDESH 🦅",
-                profileImage: "/user.png",
+                username: user.email?.split('@')[0] || "user",
+                name: user.displayName || "Anonymous",
+                profileImage: user.photoURL || "/user.png",
                 timestamp: serverTimestamp(),
                 likes: 0,
                 comments: 0,
